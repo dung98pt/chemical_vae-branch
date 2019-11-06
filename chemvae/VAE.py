@@ -87,6 +87,10 @@ def vectorize_data(params):
     
     smiles = load_smiles_and_data_df('../models/zinc/'+params['data_file'], MAX_LEN)
 
+    N = len(smiles)
+    ind = int(N / 126 / 200) 
+    idx = int(ind * 0.8) * 126
+
     ahihi = sorted(list(CHAR_INDICES.keys()))
     print('Training set size is', len(smiles))
     print('first smiles: \"', smiles[0], '\"')
@@ -104,16 +108,15 @@ def vectorize_data(params):
         return enc.transform(str).toarray()
 
     X = []
-    for smile in smiles:
-        X.append(one_hot(smile))
+    for i in range(idx*126)_:
+        X.append(one_hot(smiles[i]))
     X = np.array(X)
     print('Vectorization...')
-    ind = int(X.shape[0] / 126 / 200) 
-    idx = int(ind * 0.8)
-    print(X[0][0])
-    X_train = X[:idx*126,:,:]
 
-    X_test = X[idx*126:ind*126,:,:]
+    print(X[0][0])
+    X_train = X[:idx,:,:]
+    X_test = X[idx:,:,:]
+
     return X_train, X_test
 
 
