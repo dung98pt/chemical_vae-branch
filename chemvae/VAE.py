@@ -24,7 +24,7 @@ from keras import backend as K
 from keras.models import Model
 from keras.optimizers import SGD, Adam, RMSprop
 import hyperparameters
-import mol_utils as mu
+
 import mol_callbacks as mol_cb
 from keras.callbacks import CSVLogger
 from models import encoder_model, load_encoder
@@ -34,6 +34,36 @@ from models import variational_layers
 from functools import partial
 from keras.layers import Lambda
 
+def load_smiles_and_data_df(data_file, max_len, reg_tasks=None, logit_tasks=None, normalize_out=None, dtype='float64'):
+    # reg_tasks : list of columns in df that correspond to regression tasks
+    # logit_tasks : list of columns in df that correspond to logit tasks
+
+    if logit_tasks is None:
+        logit_tasks = []
+    if reg_tasks is None:
+        reg_tasks = []
+    df = pd.read_csv(data_file)
+    df.iloc[:, 0] = df.iloc[:, 0].str.strip()
+    df = df[df.iloc[:, 0].str.len() <= max_len]
+    smiles = df.iloc[:, 0].tolist()
+
+    reg_data_df = df[reg_tasks]
+    logit_data_df = df[logit_tasks]
+    # Load regression tasks
+    if len(reg_tasks) != 0 and normalize_out is not None:
+        df_norm = pd.DataFrame(reg_data_df.mean(axis=0), columns=['mean'])
+        df_norm['std'] = reg_data_df.std(axis=0)
+        reg_data_df = (reg_data_df - df_norm['mean']) / df_norm['std']
+        df_norm.to_csv(normalize_out)
+
+    if len(logit_tasks) != 0 and len(reg_tasks) != 0:
+        return smiles, np.vstack(reg_data_df.values).astype(dtype), np.vstack(logit_data_df.values).astype(dtype)
+    elif len(reg_tasks) != 0:
+        return smiles, np.vstack(reg_data_df.values).astype(dtype)
+    elif len(logit_tasks) != 0:
+        return smiles, np.vstack(logit_data_df.values).astype(dtype)
+    else:
+        return smiles
 
 
 def vectorize_data(params):
@@ -55,7 +85,7 @@ def vectorize_data(params):
 
     ## Load data for properties
     
-    smiles = mu.load_smiles_and_data_df('../models/zinc/'+params['data_file'], MAX_LEN)
+    smiles = load_smiles_and_data_df('../models/zinc/'+params['data_file'], MAX_LEN)
 
     ahihi = sorted(list(CHAR_INDICES.keys()))
     print('Training set size is', len(smiles))
