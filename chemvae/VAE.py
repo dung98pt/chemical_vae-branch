@@ -24,7 +24,7 @@ from keras import backend as K
 from keras.models import Model
 from keras.optimizers import SGD, Adam, RMSprop
 import hyperparameters
-
+import pandas as pd
 import mol_callbacks as mol_cb
 from keras.callbacks import CSVLogger
 from models import encoder_model, load_encoder
