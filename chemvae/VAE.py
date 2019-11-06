@@ -1,5 +1,5 @@
 """
-
+ahihi do ngoc
 This version of autoencoder is able to save weights and load weights for the
 encoder and decoder portions of the network
 
