@@ -108,7 +108,7 @@ def vectorize_data(params):
         return enc.transform(str).toarray()
 
     X = []
-    for i in range(idx*126)_:
+    for i in range(idx*126):
         X.append(one_hot(smiles[i]))
     X = np.array(X)
     print('Vectorization...')
