@@ -75,7 +75,7 @@ def vectorize_data(params):
 
     MAX_LEN = params['MAX_LEN']
 
-    CHARS = yaml.safe_load(open('../models/zinc/'+ params['char_file']))
+    CHARS = yaml.safe_load(open(params['char_file']))
     params['NCHARS'] = len(CHARS)
     NCHARS = len(CHARS)
     CHAR_INDICES = dict((c, i) for i, c in enumerate(CHARS))
@@ -85,7 +85,7 @@ def vectorize_data(params):
 
     ## Load data for properties
     
-    smiles = load_smiles_and_data_df('../models/zinc/'+params['data_file'], MAX_LEN)
+    smiles = load_smiles_and_data_df(params['data_file'], MAX_LEN)
 
     N = len(smiles)
     ind = int(N / 126 / 200) 
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--exp_file',
                         help='experiment file', default='exp.json')
     parser.add_argument('-d', '--directory',
-                        help='exp directory', default="./models/zinc")
+                        help='exp directory', default=None)
     args = vars(parser.parse_args())
     if args['directory'] is not None:
         args['exp_file'] = os.path.join(args['directory'], args['exp_file'])
