@@ -7,7 +7,7 @@
   "decoder_weights_file": "zinc_decoder.h5",
   "test_idx_file": "test_idx.npy",
   "history_file": "history.csv",
-  "checkpoint_path": "./models",
+  "checkpoint_path": "./",
   "do_prop_pred": false,
   "TRAIN_MODEL": true,
   "ENC_DEC_TEST": false,
