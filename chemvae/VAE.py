@@ -108,7 +108,7 @@ def vectorize_data(params):
         X.append(one_hot(smile))
     X = np.array(X)
     print('Vectorization...')
-    ind = int(X.shape[0] / 126) 
+    ind = int(X.shape[0] / 126 / 200) 
     idx = int(ind * 0.8)
     print(X[0][0])
     X_train = X[:idx*126,:,:]
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--exp_file',
                         help='experiment file', default='exp.json')
     parser.add_argument('-d', '--directory',
-                        help='exp directory', default="../models/zinc")
+                        help='exp directory', default="./models/zinc")
     args = vars(parser.parse_args())
     if args['directory'] is not None:
         args['exp_file'] = os.path.join(args['directory'], args['exp_file'])
