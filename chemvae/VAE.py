@@ -34,92 +34,39 @@ from models import variational_layers
 from functools import partial
 from keras.layers import Lambda
 
-def load_smiles_and_data_df(data_file, max_len, reg_tasks=None, logit_tasks=None, normalize_out=None, dtype='float64'):
-    # reg_tasks : list of columns in df that correspond to regression tasks
-    # logit_tasks : list of columns in df that correspond to logit tasks
+from keras.utils import to_categorical
+import numpy as np
+DICT = {'5': 29, '=': 22, 'N': 31, 'l': 16, 'H': 18, ']': 3, '@': 21, '6': 1, 'O': 17, 'c': 19, '2': 27, '8': 25, '3': 4, '7': 0, 'I': 15, 'C': 26, 'F': 28, '-': 7, 'P': 24, '/': 9, ')': 13, ' ': 34, '#': 14, 'r': 30, '\\': 33, '1': 20, 'n': 23, '+': 32, '[': 12, 'o': 2, 's': 5, '4': 11, 'S': 8, '(': 6, 'B': 10}
+str = "CC(C)(C)c1ccc2occ(CC(=O)Nc3ccccc3F)c2c1"
+def one_hot(str, LEN_MAX = 120):
+    str = list(str)
+    if len(str) < LEN_MAX:
+        for i in range(LEN_MAX - len(str)):
+            str.append(" ")
+    hot  = []
+    for char in list(str):
+      hot.append(DICT[char])
+    return to_categorical(hot)
 
-    if logit_tasks is None:
-        logit_tasks = []
-    if reg_tasks is None:
-        reg_tasks = []
-    df = pd.read_csv(data_file)
-    df.iloc[:, 0] = df.iloc[:, 0].str.strip()
-    df = df[df.iloc[:, 0].str.len() <= max_len]
-    smiles = df.iloc[:, 0].tolist()
-
-    reg_data_df = df[reg_tasks]
-    logit_data_df = df[logit_tasks]
-    # Load regression tasks
-    if len(reg_tasks) != 0 and normalize_out is not None:
-        df_norm = pd.DataFrame(reg_data_df.mean(axis=0), columns=['mean'])
-        df_norm['std'] = reg_data_df.std(axis=0)
-        reg_data_df = (reg_data_df - df_norm['mean']) / df_norm['std']
-        df_norm.to_csv(normalize_out)
-
-    if len(logit_tasks) != 0 and len(reg_tasks) != 0:
-        return smiles, np.vstack(reg_data_df.values).astype(dtype), np.vstack(logit_data_df.values).astype(dtype)
-    elif len(reg_tasks) != 0:
-        return smiles, np.vstack(reg_data_df.values).astype(dtype)
-    elif len(logit_tasks) != 0:
-        return smiles, np.vstack(logit_data_df.values).astype(dtype)
-    else:
-        return smiles
-
-
-def vectorize_data(params):
-    # @out : Y_train /Y_test : each is list of datasets.
-    #        i.e. if reg_tasks only : Y_train_reg = Y_train[0]
-    #             if logit_tasks only : Y_train_logit = Y_train[0]
-    #             if both reg and logit_tasks : Y_train_reg = Y_train[0], Y_train_reg = 1
-    #             if no prop tasks : Y_train = []
-
-    MAX_LEN = params['MAX_LEN']
-
-    CHARS = yaml.safe_load(open(params['char_file']))
-    params['NCHARS'] = len(CHARS)
-    NCHARS = len(CHARS)
-    CHAR_INDICES = dict((c, i) for i, c in enumerate(CHARS))
-    print(CHAR_INDICES)
-    print("==========------------------------------------=========================================================")
-    #INDICES_CHAR = dict((i, c) for i, c in enumerate(CHARS))
-
-    ## Load data for properties
-    
-    smiles = load_smiles_and_data_df(params['data_file'], MAX_LEN)
-
-    # N = len(smiles)
-    # ind = int(N / 126 / 200) 
-    # idx = int(ind * 0.8) * 126
-
-    # ahihi = sorted(list(CHAR_INDICES.keys()))
-    # print('Training set size is', len(smiles))
-    # print('first smiles: \"', smiles[0], '\"')
-    # print('total chars:', NCHARS)
-    # enc = OneHotEncoder(handle_unknown='ignore')
-    # sample = (np.array(ahihi).reshape(-1,1))
-    # enc.fit(sample)
-    # enc.categories_
-    # def one_hot(str, LEN_MAX = 120):
-    #     str = list(str)
-    #     if len(str) < LEN_MAX:
-    #         for i in range(LEN_MAX - len(str)):
-    #             str.append(" ")
-    #     str = np.array(str).reshape(-1,1)
-    #     return enc.transform(str).toarray()
-
-    # X = []
-    # for i in range(idx*126):
-    #     X.append(one_hot(smiles[i]))
-    # X = np.array(X)
-    # print('Vectorization...')
-
-    # print(X[0][0])
-    # X_train = X[:idx,:,:]
-    # X_test = X[idx:,:,:]
-    X_train = np.full((0,120,35),1)
-    X_test = np.full((0,120,35),1)
-    return X_train, X_test
-
+import pandas as pd
+def load_data():
+    link1 = '250k_rndm_zinc_drugs_clean_3.csv'
+    df1 = pd.read_csv(link1, delimiter=',', names = ['smiles','1','2','3'])
+    smiles = list(df1.smiles)[1:]
+    X = []
+    for smile in smiles:
+        try:
+            X.append(one_hot(smile[:-1]))
+        except:
+            print ("ahihi do ngoc")
+    X = np.array(X)
+    print(X.shape)
+    id = int (X.shape[0] / 20)
+    idx = int (id * 0.8)
+    X_train = X[:idx,:,:]
+    X_val = X[idx:id,:,:]
+    X_test = X[id:id+100,:,:]
+    return X_train, X_val
 
 def load_models(params):
 
@@ -205,7 +152,7 @@ def kl_loss(truth_dummy, x_mean_log_var_output):
 def main_no_prop(params):
     start_time = time.time()
 
-    X_train, X_test = vectorize_data(params)
+    X_train, X_test = load_data()
     print("---------------------------")
     print(X_train.shape)
     print(X_test.shape)
