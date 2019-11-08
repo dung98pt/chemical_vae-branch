@@ -221,7 +221,7 @@ def main_no_prop(params):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--exp_file',
-                        help='experiment file', default='exp.json')
+                        help='experiment file', default='./exp.json')
     parser.add_argument('-d', '--directory',
                         help='exp directory', default=None)
     args = vars(parser.parse_args())
