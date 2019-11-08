@@ -61,11 +61,10 @@ def load_data():
             print ("ahihi do ngoc")
     X = np.array(X)
     print(X.shape)
-    id = int (X.shape[0] / 20)
-    idx = int (id * 0.8)
-    X_train = X[:idx,:,:]
-    X_val = X[idx:id,:,:]
-    X_test = X[id:id+100,:,:]
+    id = int (X.shape[0] / 126)
+    idx = int (id * 0.8) 
+    X_train = X[: idx*126,:,:]
+    X_val = X[idx*126 : id*126,:,:]
     return X_train, X_val
 
 def load_models(params):
