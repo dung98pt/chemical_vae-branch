@@ -87,36 +87,37 @@ def vectorize_data(params):
     
     smiles = load_smiles_and_data_df(params['data_file'], MAX_LEN)
 
-    N = len(smiles)
-    ind = int(N / 126 / 200) 
-    idx = int(ind * 0.8) * 126
+    # N = len(smiles)
+    # ind = int(N / 126 / 200) 
+    # idx = int(ind * 0.8) * 126
 
-    ahihi = sorted(list(CHAR_INDICES.keys()))
-    print('Training set size is', len(smiles))
-    print('first smiles: \"', smiles[0], '\"')
-    print('total chars:', NCHARS)
-    enc = OneHotEncoder(handle_unknown='ignore')
-    sample = (np.array(ahihi).reshape(-1,1))
-    enc.fit(sample)
-    enc.categories_
-    def one_hot(str, LEN_MAX = 120):
-        str = list(str)
-        if len(str) < LEN_MAX:
-            for i in range(LEN_MAX - len(str)):
-                str.append(" ")
-        str = np.array(str).reshape(-1,1)
-        return enc.transform(str).toarray()
+    # ahihi = sorted(list(CHAR_INDICES.keys()))
+    # print('Training set size is', len(smiles))
+    # print('first smiles: \"', smiles[0], '\"')
+    # print('total chars:', NCHARS)
+    # enc = OneHotEncoder(handle_unknown='ignore')
+    # sample = (np.array(ahihi).reshape(-1,1))
+    # enc.fit(sample)
+    # enc.categories_
+    # def one_hot(str, LEN_MAX = 120):
+    #     str = list(str)
+    #     if len(str) < LEN_MAX:
+    #         for i in range(LEN_MAX - len(str)):
+    #             str.append(" ")
+    #     str = np.array(str).reshape(-1,1)
+    #     return enc.transform(str).toarray()
 
-    X = []
-    for i in range(idx*126):
-        X.append(one_hot(smiles[i]))
-    X = np.array(X)
-    print('Vectorization...')
+    # X = []
+    # for i in range(idx*126):
+    #     X.append(one_hot(smiles[i]))
+    # X = np.array(X)
+    # print('Vectorization...')
 
-    print(X[0][0])
-    X_train = X[:idx,:,:]
-    X_test = X[idx:,:,:]
-
+    # print(X[0][0])
+    # X_train = X[:idx,:,:]
+    # X_test = X[idx:,:,:]
+    X_train = np.full((0,120,35),1)
+    X_test = np.full((0,120,35),1)
     return X_train, X_test
 
 

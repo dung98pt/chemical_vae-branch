@@ -36,113 +36,42 @@ from keras.layers import Lambda
 
 
 
-def vectorize_data(params):
-    # @out : Y_train /Y_test : each is list of datasets.
-    #        i.e. if reg_tasks only : Y_train_reg = Y_train[0]
-    #             if logit_tasks only : Y_train_logit = Y_train[0]
-    #             if both reg and logit_tasks : Y_train_reg = Y_train[0], Y_train_reg = 1
-    #             if no prop tasks : Y_train = []
+from keras.utils import to_categorical
+import numpy as np
+DICT = {'5': 29, '=': 22, 'N': 31, 'l': 16, 'H': 18, ']': 3, '@': 21, '6': 1, 'O': 17, 'c': 19, '2': 27, '8': 25, '3': 4, '7': 0, 'I': 15, 'C': 26, 'F': 28, '-': 7, 'P': 24, '/': 9, ')': 13, ' ': 34, '#': 14, 'r': 30, '\\': 33, '1': 20, 'n': 23, '+': 32, '[': 12, 'o': 2, 's': 5, '4': 11, 'S': 8, '(': 6, 'B': 10}
+str = "CC(C)(C)c1ccc2occ(CC(=O)Nc3ccccc3F)c2c1"
+def one_hot(str, LEN_MAX = 120):
+    str = list(str)
+    if len(str) < LEN_MAX:
+        for i in range(LEN_MAX - len(str)):
+            str.append(" ")
+    hot  = []
+    for char in list(str):
+      hot.append(DICT[char])
+    return to_categorical(hot)
 
-    MAX_LEN = params['MAX_LEN']
+import pandas as pd
+def load_data:
+	link1 = '250k_rndm_zinc_drugs_clean_3.csv'
+	df1 = pd.read_csv(link1, delimiter=',', names = ['smiles','1','2','3'])
+	smiles = list(df1.smiles)[1:]
+	X = []
+	for smile in smiles:
+	  try:
+	    X.append(one_hot(smile[:-1]))  
+	  except:
+	      print ("ahihi do ngoc")
+	X = np.array(X)
+	print(X.shape)
 
-    CHARS = yaml.safe_load(open('/home/ntd/Downloads/chemical_vae-master/models/zinc/'+ params['char_file']))
-    params['NCHARS'] = len(CHARS)
-    NCHARS = len(CHARS)
-    CHAR_INDICES = dict((c, i) for i, c in enumerate(CHARS))
-    #INDICES_CHAR = dict((i, c) for i, c in enumerate(CHARS))
-
-    ## Load data for properties
-    if params['do_prop_pred'] and ('data_file' in params):
-        if "data_normalization_out" in params:
-            normalize_out = params["data_normalization_out"]
-        else:
-            normalize_out = None
-
-        ################
-        if ("reg_prop_tasks" in params) and ("logit_prop_tasks" in params):
-            smiles, Y_reg, Y_logit = mu.load_smiles_and_data_df(params['data_file'], MAX_LEN,
-                    reg_tasks=params['reg_prop_tasks'], logit_tasks=params['logit_prop_tasks'],
-                    normalize_out = normalize_out)
-        elif "logit_prop_tasks" in params:
-            smiles, Y_logit = mu.load_smiles_and_data_df(params['data_file'], MAX_LEN,
-                    logit_tasks=params['logit_prop_tasks'], normalize_out=normalize_out)
-        elif "reg_prop_tasks" in params:
-            smiles, Y_reg = mu.load_smiles_and_data_df(params['data_file'], MAX_LEN,
-                    reg_tasks=params['reg_prop_tasks'], normalize_out=normalize_out)
-        else:
-            raise ValueError("please sepcify logit and/or reg tasks")
-
-    ## Load data if no properties
-    else:
-        smiles = mu.load_smiles_and_data_df('/home/ntd/Downloads/chemical_vae-master/models/zinc/'+params['data_file'], MAX_LEN)
-
-    if 'limit_data' in params.keys():
-        sample_idx = np.random.choice(np.arange(len(smiles)), params['limit_data'], replace=False)
-        smiles=list(np.array(smiles)[sample_idx])
-        if params['do_prop_pred'] and ('data_file' in params):
-            if "reg_prop_tasks" in params:
-                Y_reg =  Y_reg[sample_idx]
-            if "logit_prop_tasks" in params:
-                Y_logit =  Y_logit[sample_idx]
-
-    print('Training set size is', len(smiles))
-    print('first smiles: \"', smiles[0], '\"')
-    print('total chars:', NCHARS)
-
-    print('Vectorization...')
-    X = mu.smiles_to_hot(smiles, MAX_LEN, params[
-                             'PADDING'], CHAR_INDICES, NCHARS)
-
-    print('Total Data size', X.shape[0])
-    if np.shape(X)[0] % params['batch_size'] != 0:
-        X = X[:np.shape(X)[0] // params['batch_size']
-              * params['batch_size']]
-        if params['do_prop_pred']:
-            if "reg_prop_tasks" in params:
-                Y_reg = Y_reg[:np.shape(Y_reg)[0] // params['batch_size']
-                      * params['batch_size']]
-            if "logit_prop_tasks" in params:
-                Y_logit = Y_logit[:np.shape(Y_logit)[0] // params['batch_size']
-                      * params['batch_size']]
-
-    np.random.seed(params['RAND_SEED'])
-    rand_idx = np.arange(np.shape(X)[0])
-    np.random.shuffle(rand_idx)
-
-    TRAIN_FRAC = 1 - params['val_split']
-    num_train = int(X.shape[0] * TRAIN_FRAC)
-
-    if num_train % params['batch_size'] != 0:
-        num_train = num_train // params['batch_size'] * \
-            params['batch_size']
-
-    train_idx, test_idx = rand_idx[: int(num_train)], rand_idx[int(num_train):]
-
-    if 'test_idx_file' in params.keys():
-        np.save(params['test_idx_file'], test_idx)
-
-    X_train, X_test = X[train_idx], X[test_idx]
-    print('shape of input vector : {}', np.shape(X_train))
-    print('Training set size is {}, after filtering to max length of {}'.format(
-        np.shape(X_train), MAX_LEN))
-
-    if params['do_prop_pred']:
-        # !# add Y_train and Y_test here
-        Y_train = []
-        Y_test = []
-        if "reg_prop_tasks" in params:
-            Y_reg_train, Y_reg_test = Y_reg[train_idx], Y_reg[test_idx]
-            Y_train.append(Y_reg_train)
-            Y_test.append(Y_reg_test)
-        if "logit_prop_tasks" in params:
-            Y_logit_train, Y_logit_test = Y_logit[train_idx], Y_logit[test_idx]
-            Y_train.append(Y_logit_train)
-            Y_test.append(Y_logit_test)
-
-        return X_train, X_test, Y_train, Y_test
-
-    else:
-        return X_train, X_test
+	id = int (X.shape[0] / 20)
+	idx = int (id * 0.8)
+	X_train = X[:idx,:,:]
+	X_val = X[idx:id,:,:]
+	X_test = X[id:id+100,:,:]
+	print(X_train.shape)
+	print(X_test.shape)
+        return X_train, X_val
 
 
 def load_models(params):
@@ -225,7 +154,7 @@ def kl_loss(truth_dummy, x_mean_log_var_output):
 def main_no_prop(params):
     start_time = time.time()
 
-    X_train, X_test = vectorize_data(params)
+    X_train, X_test = load_data
     print("---------------------------")
     print(X_train)
     print(X_test.shape)
